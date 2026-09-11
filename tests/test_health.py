@@ -12,3 +12,11 @@ def test_root_redirects(client):
     response = client.get("/", follow_redirects=False)
     assert response.status_code == 307
     assert "/static/index.html" in response.headers.get("location", "")
+
+
+def test_app_header_shows_zest_demo(client):
+    """The SPA header carries the "Zest demo" label."""
+    response = client.get("/app")
+    assert response.status_code == 200
+    assert 'id="headerAppTitle"' in response.text
+    assert "Zest demo" in response.text
