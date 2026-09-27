@@ -268,3 +268,37 @@ class ShareLink(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+# --- CALORIE TRACKING ---
+class CalorieEntryBase(BaseModel):
+    entry_date: str  # "2025-12-24"
+    calories: int
+    note: str = ""
+
+class CalorieEntryCreate(CalorieEntryBase):
+    pass
+
+class CalorieEntryUpdate(CalorieEntryBase):
+    pass
+
+class CalorieEntry(BaseModel):
+    id: int
+    user_id: int
+    entry_date: date
+    calories: int
+    note: str = ""
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+class WeeklyCalorieSummary(BaseModel):
+    """Aggregated calorie totals for one Monday-Sunday week."""
+    week_start: date
+    week_end: date
+    total_calories: int
+    average_daily: float
+    days_logged: int
+    entries: List[CalorieEntry] = []

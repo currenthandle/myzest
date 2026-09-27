@@ -107,6 +107,26 @@ try:
             conn.execute(text("CREATE INDEX IF NOT EXISTS ix_memory_photos_id ON memory_photos (id)"))
             conn.commit()
 
+        # calorie_entries (Weekly calorie tracking)
+        try:
+            conn.execute(text("SELECT 1 FROM calorie_entries LIMIT 1"))
+        except Exception:
+            conn.execute(text("""
+                CREATE TABLE calorie_entries (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL REFERENCES users(id),
+                    entry_date DATE NOT NULL,
+                    calories INTEGER NOT NULL,
+                    note TEXT DEFAULT '',
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME
+                )
+            """))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_calorie_entries_id ON calorie_entries (id)"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_calorie_entries_user_id ON calorie_entries (user_id)"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_calorie_entries_entry_date ON calorie_entries (entry_date)"))
+            conn.commit()
+
         # ---- Columns ----
         # ShareLink.recipe_id (individual recipe sharing)
         try:
@@ -2791,3 +2811,142 @@ def generate_moment_card(
             "Cache-Control": "no-cache",
         }
     )
+
+
+# --- CALORIE TRACKING (Weekly Calorie Intake) ---
+
+def _week_bounds(anchor: date) -> tuple[date, date]:
+    """Return (monday, sunday) of the ISO week containing anchor."""
+    week_start = anchor - timedelta(days=anchor.weekday())
+    week_end = week_start + timedelta(days=6)
+    return week_start, week_end
+
+
+def _build_weekly_calorie_summary(db: Session, user_id: int, anchor: date) -> schemas.WeeklyCalorieSummary:
+    """Aggregate the current user's entries into a Monday-Sunday summary."""
+    week_start, week_end = _week_bounds(anchor)
+    entries = db.query(models.CalorieEntry).filter(
+        models.CalorieEntry.user_id == user_id,
+        models.CalorieEntry.entry_date >= week_start,
+        models.CalorieEntry.entry_date <= week_end,
+    ).order_by(models.CalorieEntry.entry_date.asc()).all()
+
+    total_calories = sum(e.calories for e in entries)
+    days_logged = len({e.entry_date for e in entries})
+    average_daily = round(total_calories / days_logged, 1) if days_logged else 0.0
+
+    return schemas.WeeklyCalorieSummary(
+        week_start=week_start,
+        week_end=week_end,
+        total_calories=total_calories,
+        average_daily=average_daily,
+        days_logged=days_logged,
+        entries=entries,
+    )
+
+
+@app.get("/calories/", response_model=List[schemas.CalorieEntry])
+def list_calorie_entries(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """List the current user's logged calorie entries, newest first.
+
+    Optional start_date/end_date (YYYY-MM-DD) narrow the range, e.g. for a
+    specific week.
+    """
+    query = db.query(models.CalorieEntry).filter(models.CalorieEntry.user_id == current_user.id)
+    if start_date:
+        query = query.filter(models.CalorieEntry.entry_date >= date.fromisoformat(start_date))
+    if end_date:
+        query = query.filter(models.CalorieEntry.entry_date <= date.fromisoformat(end_date))
+    return query.order_by(models.CalorieEntry.entry_date.desc()).all()
+
+
+@app.get("/calories/weekly", response_model=schemas.WeeklyCalorieSummary)
+def get_weekly_calorie_summary(
+    week_start: Optional[str] = None,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """Summary (total, daily average, days logged) for the Monday-Sunday
+    week containing week_start. Defaults to the current week."""
+    anchor = date.fromisoformat(week_start) if week_start else date.today()
+    return _build_weekly_calorie_summary(db, current_user.id, anchor)
+
+
+@app.get("/calories/weekly/history", response_model=List[schemas.WeeklyCalorieSummary])
+def get_weekly_calorie_history(
+    weeks: int = 8,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """The last N weekly summaries (including the current week), most recent first."""
+    weeks = max(1, min(weeks, 52))
+    today = date.today()
+    return [_build_weekly_calorie_summary(db, current_user.id, today - timedelta(weeks=i)) for i in range(weeks)]
+
+
+@app.get("/calories/{entry_id}", response_model=schemas.CalorieEntry)
+def get_calorie_entry(entry_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    """Detail of a single calorie entry."""
+    entry = db.query(models.CalorieEntry).filter(
+        models.CalorieEntry.id == entry_id,
+        models.CalorieEntry.user_id == current_user.id,
+    ).first()
+    if not entry:
+        raise HTTPException(404, "Calorie entry not found")
+    return entry
+
+
+@app.post("/calories/", response_model=schemas.CalorieEntry)
+def create_calorie_entry(entry: schemas.CalorieEntryCreate, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    """Log calorie intake for one day."""
+    if entry.calories < 0:
+        raise HTTPException(400, "Calories must be zero or greater")
+    db_entry = models.CalorieEntry(
+        user_id=current_user.id,
+        entry_date=date.fromisoformat(entry.entry_date),
+        calories=entry.calories,
+        note=entry.note or "",
+    )
+    db.add(db_entry)
+    db.commit()
+    db.refresh(db_entry)
+    return db_entry
+
+
+@app.put("/calories/{entry_id}", response_model=schemas.CalorieEntry)
+def update_calorie_entry(entry_id: int, entry: schemas.CalorieEntryUpdate, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    """Edit a logged calorie entry."""
+    db_entry = db.query(models.CalorieEntry).filter(
+        models.CalorieEntry.id == entry_id,
+        models.CalorieEntry.user_id == current_user.id,
+    ).first()
+    if not db_entry:
+        raise HTTPException(404, "Calorie entry not found")
+    if entry.calories < 0:
+        raise HTTPException(400, "Calories must be zero or greater")
+
+    db_entry.entry_date = date.fromisoformat(entry.entry_date)
+    db_entry.calories = entry.calories
+    db_entry.note = entry.note or ""
+    db.commit()
+    db.refresh(db_entry)
+    return db_entry
+
+
+@app.delete("/calories/{entry_id}")
+def delete_calorie_entry(entry_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    """Remove a logged calorie entry."""
+    db_entry = db.query(models.CalorieEntry).filter(
+        models.CalorieEntry.id == entry_id,
+        models.CalorieEntry.user_id == current_user.id,
+    ).first()
+    if not db_entry:
+        raise HTTPException(404, "Calorie entry not found")
+    db.delete(db_entry)
+    db.commit()
+    return {"message": "Calorie entry deleted"}

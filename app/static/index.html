@@ -454,6 +454,13 @@
                 <span class="font-medium text-sm text-gray-600 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white" data-i18n="nav.shoppingList">Shopping List</span>
             </div>
 
+            <div id="navCalories" class="nav-item p-3 rounded-xl cursor-pointer flex items-center gap-4 group" onclick="showView('calories')">
+                <div class="bg-white border border-gray-200 dark:bg-gray-700 dark:border-gray-600 p-2 rounded-lg text-orange-500 shadow-sm">
+                    <i class="ph-bold ph-fire text-xl"></i>
+                </div>
+                <span class="font-medium text-sm text-gray-600 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white" data-i18n="nav.calories">Calorie Tracker</span>
+            </div>
+
             <div id="navScraper" class="nav-item p-3 rounded-xl cursor-pointer flex items-center gap-4 group" onclick="showView('scraper')">
                 <div class="bg-white border border-gray-200 dark:bg-gray-700 dark:border-gray-600 p-2 rounded-lg text-orange-500 shadow-sm">
                     <i class="ph-bold ph-globe text-xl"></i>
@@ -1009,6 +1016,80 @@
                         <button onclick="openMemoryModal()" class="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-xl font-bold inline-flex items-center gap-2 transition-colors">
                             <i class="ph-bold ph-plus"></i> Create your first memory
                         </button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="viewCalories" class="hidden">
+                <div class="max-w-4xl mx-auto">
+
+                    <!-- Header -->
+                    <div class="flex items-center justify-between mb-8">
+                        <div>
+                            <h1 class="text-3xl font-black text-gray-800 dark:text-white flex items-center gap-3">
+                                <i class="ph-bold ph-fire text-orange-500"></i> Calorie Tracker
+                            </h1>
+                            <p class="text-gray-500 dark:text-gray-400 text-sm mt-1">Log your daily intake and see your weekly trend</p>
+                        </div>
+                    </div>
+
+                    <!-- Weekly summary card -->
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 mb-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="font-bold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                                <i class="ph-bold ph-calendar-blank text-orange-500"></i>
+                                <span id="calorieWeekRange">This week</span>
+                            </h2>
+                            <div class="flex items-center gap-2">
+                                <button onclick="shiftCalorieWeek(-1)" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500" title="Previous week">
+                                    <i class="ph-bold ph-caret-left"></i>
+                                </button>
+                                <button onclick="shiftCalorieWeek(1)" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500" title="Next week">
+                                    <i class="ph-bold ph-caret-right"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-3 gap-4 text-center">
+                            <div>
+                                <p id="calorieWeekTotal" class="text-2xl font-black text-orange-500">0</p>
+                                <p class="text-xs text-gray-400 uppercase tracking-wide">Total kcal</p>
+                            </div>
+                            <div>
+                                <p id="calorieWeekAverage" class="text-2xl font-black text-gray-800 dark:text-white">0</p>
+                                <p class="text-xs text-gray-400 uppercase tracking-wide">Daily average</p>
+                            </div>
+                            <div>
+                                <p id="calorieWeekDays" class="text-2xl font-black text-gray-800 dark:text-white">0/7</p>
+                                <p class="text-xs text-gray-400 uppercase tracking-wide">Days logged</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Add entry form -->
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 mb-6">
+                        <h2 class="font-bold text-gray-700 dark:text-gray-300 mb-4 flex items-center gap-2">
+                            <i class="ph-bold ph-plus-circle text-orange-500"></i> Log intake
+                        </h2>
+                        <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                            <input type="date" id="calorieEntryDate" class="sm:col-span-1 px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm">
+                            <input type="number" id="calorieEntryCalories" min="0" placeholder="Calories (kcal)" class="sm:col-span-1 px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm">
+                            <input type="text" id="calorieEntryNote" placeholder="Note (optional)" class="sm:col-span-1 px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm">
+                            <button onclick="saveCalorieEntry()" class="sm:col-span-1 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2">
+                                <i class="ph-bold ph-plus"></i> Add
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Entries for the selected week -->
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                        <div id="calorieEntriesList"></div>
+                        <div id="calorieEntriesEmpty" class="hidden text-center py-16">
+                            <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-orange-100 dark:bg-orange-900/30 mb-4">
+                                <i class="ph-bold ph-fire text-4xl text-orange-400"></i>
+                            </div>
+                            <h3 class="text-lg font-bold text-gray-700 dark:text-gray-300 mb-1">No entries this week</h3>
+                            <p class="text-gray-400 text-sm">Log your first calorie count above.</p>
+                        </div>
                     </div>
                 </div>
             </div>

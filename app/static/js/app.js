@@ -49,6 +49,9 @@ import { initCoverDragListeners } from './coverImages.js';
 // --- Memories ---
 import './memories.js';
 
+// --- Calorie Tracking ---
+import './calories.js';
+
 // --- Recipe Detail (Reading View + Cooking Mode) ---
 import './recipeDetail.js';
 

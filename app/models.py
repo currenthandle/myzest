@@ -47,6 +47,7 @@ class User(Base):
     cookbooks = relationship("Cookbook", back_populates="user")
     share_links = relationship("ShareLink", back_populates="user")
     memories = relationship("Memory", back_populates="user")
+    calorie_entries = relationship("CalorieEntry", back_populates="user")
 
 
 class Recipe(Base):
@@ -229,3 +230,18 @@ class BackupConfig(Base):
     last_backup_status = Column(String, default="")      # "success" o "error: mensaje"
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, onupdate=datetime.utcnow)
+
+
+class CalorieEntry(Base):
+    """A single day's logged calorie intake, used to build weekly summaries."""
+    __tablename__ = "calorie_entries"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    entry_date = Column(Date, index=True)
+    calories = Column(Integer, nullable=False)
+    note = Column(String, default="")
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, onupdate=datetime.utcnow)
+
+    user = relationship("User", back_populates="calorie_entries")

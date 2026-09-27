@@ -34,6 +34,7 @@ const translations = {
     'nav.favorites': { en: 'Favorites', es: 'Favoritos' },
     'nav.cookbooks': { en: 'Cookbooks', es: 'Recetarios' },
     'nav.memories': { en: 'Memories', es: 'Recuerdos' },
+    'nav.calories': { en: 'Calorie Tracker', es: 'Contador de Calorías' },
     'nav.tools': { en: 'Tools', es: 'Herramientas' },
     'nav.whatToCook': { en: 'What to Cook?', es: '¿Qué Cocinar?' },
     'nav.calculator': { en: 'Calculate portions', es: 'Calcular porciones' },

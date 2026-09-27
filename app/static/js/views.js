@@ -7,6 +7,7 @@ import { applyFilters } from './recipeFilters.js';
 import { renderShoppingList } from './shoppingList.js';
 import { loadCookbooks } from './cookbooks.js';
 import { loadMemories } from './memories.js';
+import { loadCalories } from './calories.js';
 
 export function showView(view) {
     // Auto-close sidebar on mobile when switching views
@@ -32,6 +33,7 @@ export function showView(view) {
     document.getElementById('viewMemoryDetail').classList.add('hidden');
     document.getElementById('viewPlanner').classList.add('hidden');
     document.getElementById('viewRecipeDetail').classList.add('hidden');
+    document.getElementById('viewCalories').classList.add('hidden');
 
     // Clear active nav
     document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
@@ -72,6 +74,11 @@ export function showView(view) {
         document.getElementById('viewMemoryDetail').classList.remove('hidden');
         document.getElementById('navMemories').classList.add('active');
         filters.classList.add('hidden');
+    } else if (view === 'calories') {
+        document.getElementById('viewCalories').classList.remove('hidden');
+        document.getElementById('navCalories').classList.add('active');
+        filters.classList.add('hidden');
+        loadCalories();
     } else if (view === 'scraper') {
         document.getElementById('viewScraper').classList.remove('hidden');
         document.getElementById('navScraper').classList.add('active');
