@@ -130,6 +130,14 @@ try:
                 conn.execute(text(f"ALTER TABLE {table} ADD COLUMN is_example BOOLEAN DEFAULT 0"))
                 conn.commit()
 
+        # recipes.culture (culture / cuisine the recipe comes from)
+        try:
+            conn.execute(text("SELECT culture FROM recipes LIMIT 1"))
+        except Exception:
+            conn.execute(text("ALTER TABLE recipes ADD COLUMN culture VARCHAR DEFAULT ''"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_recipes_culture ON recipes (culture)"))
+            conn.commit()
+
         # memories.location (Phase 6 retrofit for very old DBs)
         try:
             conn.execute(text("SELECT location FROM memories LIMIT 1"))
@@ -927,6 +935,13 @@ def create_tag(tag: schemas.TagCreate, db: Session = Depends(get_db), current_us
 
 # --- RECIPES ---
 
+def _clean_culture_text(value) -> str:
+    """Normalise a culture value coming from an imported file."""
+    if not isinstance(value, str):
+        return ""
+    return " ".join(value.split())[:schemas.MAX_CULTURE_LENGTH]
+
+
 @app.get("/recipes/", response_model=List[schemas.Recipe])
 def read_recipes(skip: int = 0, limit: int = 2000, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     return db.query(models.Recipe).filter(
@@ -949,6 +964,7 @@ def create_recipe(recipe: schemas.RecipeCreate, db: Session = Depends(get_db), c
         servings=recipe.servings, rating=recipe.rating,
         image_url=recipe.image_url, is_favorite=recipe.is_favorite,
         source_url=recipe.source_url or "", source_type=recipe.source_type or "original",
+        culture=recipe.culture or "",
         user_id=current_user.id
     )
     db.add(db_recipe)
@@ -996,6 +1012,10 @@ def update_recipe(recipe_id: int, recipe: schemas.RecipeCreate, db: Session = De
     db_recipe.rating = recipe.rating
     db_recipe.image_url = recipe.image_url
     db_recipe.source_url = recipe.source_url or db_recipe.source_url or ""
+    # Only touch culture when the client sent it, so older clients don't wipe it.
+    # An explicit empty string clears it.
+    if "culture" in recipe.model_fields_set:
+        db_recipe.culture = recipe.culture or ""
     # Preserve source_type if recipe was already imported and client didn't send it explicitly
     if db_recipe.source_type == "imported" and recipe.source_type == "original":
         pass  # Don't overwrite — frontend probably didn't send the field
@@ -1585,6 +1605,7 @@ def get_shared_recipe_data(token: str, db: Session = Depends(get_db)):
             "rating": recipe.rating,
             "source_url": recipe.source_url,
             "source_type": recipe.source_type,
+            "culture": recipe.culture or "",
             "ingredients": [
                 {
                     "text": ing.text,
@@ -2121,6 +2142,7 @@ def export_recipes(db: Session = Depends(get_db), current_user: models.User = De
                 "servings": recipe.servings, "rating": recipe.rating,
                 "image_url": recipe.image_url, "is_favorite": recipe.is_favorite,
                 "source_url": recipe.source_url,
+                "culture": recipe.culture or "",
                 "categories": [cat.name for cat in recipe.categories],
                 "tags": [{"name": tag.name, "color": tag.color} for tag in recipe.tags],
                 "ingredients": [
@@ -2205,7 +2227,9 @@ async def import_recipes(file: UploadFile = File(...), db: Session = Depends(get
                 prep_time=recipe_data.get("prep_time", 0), cook_time=recipe_data.get("cook_time", 0),
                 servings=recipe_data.get("servings", 4), rating=recipe_data.get("rating", 0),
                 image_url=recipe_data.get("image_url", ""), is_favorite=recipe_data.get("is_favorite", False),
-                source_url=recipe_data.get("source_url", ""), user_id=current_user.id
+                source_url=recipe_data.get("source_url", ""),
+                culture=_clean_culture_text(recipe_data.get("culture")),
+                user_id=current_user.id
             )
             db.add(new_recipe)
             db.flush()

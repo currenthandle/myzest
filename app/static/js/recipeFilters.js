@@ -18,6 +18,7 @@ export async function loadRecipes() {
         populateCategoriesContainer();
         populateTagFilter();
         populateTagsContainer();
+        populateCultureFilter();
         applyFilters();
         updateStats();
     } catch (e) {
@@ -63,12 +64,49 @@ export function updateStats() {
     document.getElementById('statFiveStars').textContent = fiveStars.length;
 }
 
+// Fill the culture filter (and the form's autocomplete list) from the cultures
+// already used by the user's recipes. Keeps the current selection if still valid.
+export function populateCultureFilter() {
+    const cultures = [...new Set(
+        state.allRecipes.map(r => (r.culture || '').trim()).filter(Boolean)
+    )].sort((a, b) => a.localeCompare(b));
+
+    const select = document.getElementById('cultureFilter');
+    if (select) {
+        const previous = select.value;
+        select.innerHTML = '';
+        const all = document.createElement('option');
+        all.value = '';
+        all.textContent = 'All Cultures';
+        all.setAttribute('data-i18n', 'filter.allCultures');
+        select.appendChild(all);
+        cultures.forEach(c => {
+            const opt = document.createElement('option');
+            opt.value = c;
+            opt.textContent = c;
+            select.appendChild(opt);
+        });
+        select.value = cultures.includes(previous) ? previous : '';
+    }
+
+    const list = document.getElementById('cultureOptions');
+    if (list) {
+        list.innerHTML = '';
+        cultures.forEach(c => {
+            const opt = document.createElement('option');
+            opt.value = c;
+            list.appendChild(opt);
+        });
+    }
+}
+
 export function applyFilters() {
     const search = document.getElementById('searchInput').value.toLowerCase().trim();
     const clearBtn = document.getElementById('searchClearBtn');
     if (clearBtn) clearBtn.classList.toggle('hidden', !search);
     const categoryValue = document.getElementById('categoryFilter').value;
     const tagValue = document.getElementById('tagFilter').value;
+    const cultureValue = document.getElementById('cultureFilter').value;
     const ratingValue = document.getElementById('ratingFilter').value;
 
     let filtered = state.allRecipes;
@@ -101,6 +139,10 @@ export function applyFilters() {
         filtered = filtered.filter(r =>
             r.tags && r.tags.some(t => t.id === tagId)
         );
+    }
+
+    if (cultureValue) {
+        filtered = filtered.filter(r => (r.culture || '').trim() === cultureValue);
     }
 
     if (ratingValue !== '' && ratingValue !== undefined && ratingValue !== null) {

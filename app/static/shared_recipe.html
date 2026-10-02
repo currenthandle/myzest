@@ -136,6 +136,7 @@
                 const totalTime = (r.prep_time || 0) + (r.cook_time || 0);
                 const meta = [];
                 if (totalTime) meta.push(`<span class="flex items-center gap-1.5"><i class="ph-bold ph-clock" style="color:#f97316"></i> ${fmtTime(totalTime)}</span>`);
+                if (r.culture) meta.push(`<span class="flex items-center gap-1.5"><i class="ph-bold ph-globe-hemisphere-west" style="color:#f97316"></i> ${escHtml(r.culture)}</span>`);
                 if (r.servings) meta.push(`<span class="flex items-center gap-1.5"><i class="ph-bold ph-users" style="color:#f97316"></i> ${r.servings} servings</span>`);
                 if (r.prep_time) meta.push(`<span class="flex items-center gap-1.5"><i class="ph-bold ph-knife" style="color:#f97316"></i> Prep: ${fmtTime(r.prep_time)}</span>`);
                 if (r.cook_time) meta.push(`<span class="flex items-center gap-1.5"><i class="ph-bold ph-fire" style="color:#f97316"></i> Cook: ${fmtTime(r.cook_time)}</span>`);
@@ -198,6 +199,11 @@
                 document.getElementById('loadingView').classList.add('hidden');
                 document.getElementById('errorView').classList.remove('hidden');
             }
+        }
+
+        function escHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
         }
 
         function fmtTime(mins) {
