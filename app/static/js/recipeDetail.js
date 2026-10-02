@@ -7,6 +7,10 @@ import * as state from './state.js';
 import { authFetch } from './api.js';
 import { loadRecipeMemories } from './memories.js';
 
+function escapeHtml(str) {
+    return String(str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
 // ============ READING VIEW ============
 
 export async function openRecipeDetail(recipeId) {
@@ -59,6 +63,7 @@ function renderRecipeDetail(r) {
     // --- Meta badges ---
     const metaItems = [];
     if (totalTime) metaItems.push(`<span class="flex items-center gap-1.5"><i class="ph-bold ph-clock text-orange-500"></i> ${fmtTime(totalTime)}</span>`);
+    if (r.culture) metaItems.push(`<span class="flex items-center gap-1.5"><i class="ph-bold ph-globe-hemisphere-west text-orange-500"></i> ${escapeHtml(r.culture)}</span>`);
     if (r.servings) metaItems.push(`<span class="flex items-center gap-1.5"><i class="ph-bold ph-users text-orange-500"></i> ${r.servings} servings</span>`);
     if (r.prep_time) metaItems.push(`<span class="flex items-center gap-1.5"><i class="ph-bold ph-knife text-orange-500"></i> Prep: ${fmtTime(r.prep_time)}</span>`);
     if (r.cook_time) metaItems.push(`<span class="flex items-center gap-1.5"><i class="ph-bold ph-fire text-orange-500"></i> Cook: ${fmtTime(r.cook_time)}</span>`);

@@ -56,6 +56,7 @@ const translations = {
     // ─── FILTER BAR ───
     'filter.allCategories': { en: 'All Categories', es: 'Todas las Categorías' },
     'filter.allTags': { en: 'All Tags', es: 'Todas las Etiquetas' },
+    'filter.allCultures': { en: 'All Cultures', es: 'Todas las Culturas' },
     'filter.allRatings': { en: 'All Ratings', es: 'Todas las Calificaciones' },
     'filter.searchPlaceholder': { en: 'Search by name or ingredient...', es: 'Buscar por nombre o ingrediente...' },
     'filter.newRecipe': { en: 'New Recipe', es: 'Nueva Receta' },
@@ -75,6 +76,8 @@ const translations = {
     'recipe.noImage': { en: 'NO IMAGE', es: 'SIN IMAGEN' },
     'recipe.title': { en: 'Title', es: 'Título' },
     'recipe.categories': { en: 'Categories', es: 'Categorías' },
+    'recipe.culture': { en: 'Culture / Cuisine', es: 'Cultura / Cocina' },
+    'recipe.culturePlaceholder': { en: 'e.g. Italian, Oaxacan, Cantonese', es: 'ej. Italiana, Oaxaqueña, Cantonesa' },
     'recipe.tags': { en: 'Tags', es: 'Etiquetas' },
     'recipe.rating': { en: 'Rating', es: 'Calificación' },
     'recipe.prepMin': { en: 'Prep (min)', es: 'Prep (min)' },

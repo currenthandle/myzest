@@ -1,6 +1,8 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from typing import List, Optional
 from datetime import datetime, date
+
+MAX_CULTURE_LENGTH = 100
 
 
 # --- AUTH ---
@@ -134,6 +136,20 @@ class RecipeBase(BaseModel):
     is_favorite: bool = False
     source_url: Optional[str] = None
     source_type: str = "original"
+    culture: Optional[str] = ""
+
+    @field_validator("culture", mode="before")
+    @classmethod
+    def _clean_culture(cls, v):
+        """Trim and collapse whitespace; cap length so the filter list stays tidy."""
+        if v is None:
+            return ""
+        if not isinstance(v, str):
+            raise ValueError("culture must be a string")
+        v = " ".join(v.split())
+        if len(v) > MAX_CULTURE_LENGTH:
+            raise ValueError(f"culture must be at most {MAX_CULTURE_LENGTH} characters")
+        return v
 
 class RecipeCreate(RecipeBase):
     ingredients: List[IngredientCreate] = []

@@ -27,6 +27,7 @@ export function openModal(isNew = false, r = null) {
 
         document.getElementById('inputRating').value = 0;
         displayRating(0);
+        document.getElementById('inputCulture').value = '';
 
         clearSelectedTags();
 
@@ -43,6 +44,7 @@ export function openModal(isNew = false, r = null) {
         document.getElementById('inputTime').value = r.prep_time || 0;
         document.getElementById('inputCookTime').value = r.cook_time || 0;
         document.getElementById('inputServings').value = r.servings;
+        document.getElementById('inputCulture').value = r.culture || '';
         updateTotalTime();
         document.getElementById('inputImage').value = r.image_url || '';
         document.getElementById('inputRating').value = r.rating || 0;
@@ -173,6 +175,7 @@ export async function saveRecipe() {
         image_url: document.getElementById('inputImage').value,
         source_url: currentRecipe?.source_url || "",
         source_type: currentRecipe?.source_type || "original",
+        culture: document.getElementById('inputCulture').value.trim(),
         category_ids: state.selectedCategories,
         tag_ids: state.selectedTags,
         ingredients: getIngredientsFromRows(),

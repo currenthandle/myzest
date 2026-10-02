@@ -95,3 +95,64 @@ def test_toggle_favorite(client, auth_headers):
     # Toggle back
     toggle_resp2 = client.patch(f"/recipes/{recipe_id}/favorite", headers=auth_headers)
     assert toggle_resp2.json()["is_favorite"] is False
+
+
+# --- Culture / cuisine ---
+
+def test_culture_defaults_to_empty(client, auth_headers):
+    resp = client.post("/recipes/", json={"title": "No Culture"}, headers=auth_headers)
+    assert resp.status_code == 200
+    assert resp.json()["culture"] == ""
+
+
+def test_create_recipe_with_culture_is_trimmed(client, auth_headers):
+    resp = client.post("/recipes/", json={
+        "title": "Mole Negro",
+        "culture": "  Oaxacan   Mexican ",
+    }, headers=auth_headers)
+    assert resp.status_code == 200
+    assert resp.json()["culture"] == "Oaxacan Mexican"
+
+    listed = client.get("/recipes/", headers=auth_headers).json()
+    assert next(r for r in listed if r["title"] == "Mole Negro")["culture"] == "Oaxacan Mexican"
+
+
+def test_culture_too_long_is_rejected(client, auth_headers):
+    resp = client.post("/recipes/", json={"title": "Long", "culture": "x" * 101}, headers=auth_headers)
+    assert resp.status_code == 422
+
+
+def test_update_culture_set_clear_and_preserve(client, auth_headers):
+    rid = client.post("/recipes/", json={"title": "Ramen", "culture": "Japanese"}, headers=auth_headers).json()["id"]
+
+    # A client that doesn't send culture must not wipe it
+    resp = client.put(f"/recipes/{rid}", json={"title": "Ramen", "servings": 2}, headers=auth_headers)
+    assert resp.json()["culture"] == "Japanese"
+
+    # Changing it works
+    resp = client.put(f"/recipes/{rid}", json={"title": "Ramen", "culture": "Okinawan"}, headers=auth_headers)
+    assert resp.json()["culture"] == "Okinawan"
+
+    # An explicit empty string clears it
+    resp = client.put(f"/recipes/{rid}", json={"title": "Ramen", "culture": ""}, headers=auth_headers)
+    assert resp.json()["culture"] == ""
+
+
+def test_culture_survives_export_and_import(client, auth_headers):
+    client.post("/recipes/", json={"title": "Pad Thai", "culture": "Thai"}, headers=auth_headers)
+    exported = client.get("/export/recipes", headers=auth_headers)
+    assert exported.status_code == 200
+    assert exported.json()["recipes"][0]["culture"] == "Thai"
+
+    rid = client.get("/recipes/", headers=auth_headers).json()[0]["id"]
+    client.delete(f"/recipes/{rid}", headers=auth_headers)
+
+    imported = client.post(
+        "/import/recipes",
+        files={"file": ("recipes.json", exported.content, "application/json")},
+        headers=auth_headers,
+    )
+    assert imported.status_code == 200
+    assert imported.json()["imported"] == 1
+    listed = client.get("/recipes/", headers=auth_headers).json()
+    assert listed[0]["culture"] == "Thai"

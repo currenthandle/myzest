@@ -528,6 +528,15 @@
                     </select>
                 </div>
 
+                <div class="relative w-36 sm:w-44 shrink-0">
+                    <i class="ph-bold ph-globe-hemisphere-west absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                    <select id="cultureFilter" onchange="applyFilters()"
+                        class="w-full bg-gray-100 dark:bg-gray-700 border-none rounded-xl py-2 pl-10 pr-8 appearance-none cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors focus:ring-2 focus:ring-orange-500 outline-none text-sm font-medium truncate">
+                        <option value="" data-i18n="filter.allCultures">All Cultures</option>
+                        <!-- Filled dynamically -->
+                    </select>
+                </div>
+
                 <div class="relative w-40 sm:w-52 shrink-0">
                     <i class="ph-bold ph-star absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
                     <select id="ratingFilter" onchange="applyFilters()"
@@ -1331,6 +1340,16 @@
                                 <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2" data-i18n="recipe.title">Title</label>
                                 <input type="text" id="inputTitle" required
                                     class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 focus:ring-2 focus:ring-orange-500 outline-none transition-all text-lg font-semibold">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                                    <i class="ph-bold ph-globe-hemisphere-west"></i> <span data-i18n="recipe.culture">Culture / Cuisine</span>
+                                </label>
+                                <input type="text" id="inputCulture" list="cultureOptions" maxlength="100" autocomplete="off"
+                                    placeholder="e.g. Italian, Oaxacan, Cantonese" data-i18n-placeholder="recipe.culturePlaceholder"
+                                    class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 focus:ring-2 focus:ring-orange-500 outline-none transition-all">
+                                <datalist id="cultureOptions"></datalist>
                             </div>
 
                             <div>

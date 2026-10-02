@@ -65,6 +65,7 @@ class Recipe(Base):
     is_favorite = Column(Boolean, default=False)
     source_url = Column(String, default="")
     source_type = Column(String, default="original")   # "original", "imported", "adapted"
+    culture = Column(String, default="", index=True)    # Culture / cuisine the recipe comes from (free text, e.g. "Oaxacan")
     is_example = Column(Boolean, default=False)          # True for seed/example data
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, onupdate=datetime.utcnow)
